@@ -1,0 +1,20 @@
+plugins {
+    id 'groovy-gradle-plugin'
+    id 'org.springframework.boot' version '3.3.4' apply false
+}
+apply plugin: 'io.spring.dependency-management'
+
+repositories {
+    gradlePluginPortal()
+}
+
+dependencyManagement {
+    imports {
+        mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
+    }
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-gradle-plugin:3.3.4'
+    implementation 'io.spring.gradle:dependency-management-plugin'
+}

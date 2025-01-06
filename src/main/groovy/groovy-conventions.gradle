@@ -1,0 +1,14 @@
+plugins {
+    id 'java-common-conventions'
+    id 'groovy'
+}
+
+ext {
+    groovyVersion = dependencyManagement.importedProperties['groovy.version']
+    spockVersion = '2.4-M4-groovy-4.0'
+}
+
+tasks.withType(GroovyCompile).configureEach {
+    // ref: https://github.com/spring-projects/spring-framework/wiki/Upgrading-to-Spring-Framework-6.x#parameter-name-retention
+    groovyOptions.parameters = true
+}
