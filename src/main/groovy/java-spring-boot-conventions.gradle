@@ -1,0 +1,17 @@
+plugins {
+    id 'java-common-conventions'
+    id 'org.springframework.boot'
+    id 'io.spring.dependency-management'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    // ref: https://github.com/spring-projects/spring-framework/wiki/Upgrading-to-Spring-Framework-6.x#parameter-name-retention
+    options.compilerArgs.add("-parameters")
+    options.encoding = 'UTF-8'
+}

@@ -1,0 +1,33 @@
+plugins {
+    id 'pl.allegro.tech.build.axion-release'
+}
+
+scmVersion {
+    ignoreUncommittedChanges = false
+    tag {
+        prefix = 'v'
+        versionSeparator = ''
+    }
+    versionIncrementer 'incrementPatch'
+    branchVersionIncrementer = [
+            'feature/.*': 'incrementMinor',
+            'bugfix/.*': 'incrementPatch',
+    ]
+    createReleaseCommit false
+    hooks {
+        pre 'fileUpdate', [
+                files: ['README.md'],
+                pattern: {v, c -> /\b$v\b/},
+                replacement: {v, c -> "$v"},
+        ]
+        pre 'commit'
+    }
+}
+
+version = scmVersion.version
+logger.info("${project} version: ${project.version}")
+
+// subprojects {
+//     version = scmVersion.version
+//     logger.info("${project} version: ${project.version}")
+// }

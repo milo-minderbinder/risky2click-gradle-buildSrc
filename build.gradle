@@ -17,4 +17,5 @@ dependencyManagement {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-gradle-plugin:3.3.4'
     implementation 'io.spring.gradle:dependency-management-plugin'
+    implementation 'pl.allegro.tech.build.axion-release:pl.allegro.tech.build.axion-release.gradle.plugin:1.18.16'
 }
