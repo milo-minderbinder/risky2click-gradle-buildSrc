@@ -1,6 +1,6 @@
 plugins {
     id 'groovy-gradle-plugin'
-    id 'org.springframework.boot' version '3.3.4' apply false
+    alias(libs.plugins.springBoot) apply false
 }
 apply plugin: 'io.spring.dependency-management'
 
@@ -14,8 +14,16 @@ dependencyManagement {
     }
 }
 
+def managedSpringBootVersion = dependencyManagement.managedVersions['org.springframework.boot:spring-boot']
+
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-gradle-plugin:3.3.4'
+    implementation "org.springframework.boot:spring-boot-gradle-plugin:${managedSpringBootVersion}"
     implementation 'io.spring.gradle:dependency-management-plugin'
-    implementation 'pl.allegro.tech.build.axion-release:pl.allegro.tech.build.axion-release.gradle.plugin:1.18.16'
+    implementation plugin(libs.plugins.release)
+}
+
+// Helper function that transforms a Gradle Plugin alias from a
+// Version Catalog into a valid dependency notation for buildSrc
+def plugin(Provider<PluginDependency> plugin) {
+    return plugin.map { it.pluginId + ":" + it.pluginId + ".gradle.plugin:" + it.version }
 }

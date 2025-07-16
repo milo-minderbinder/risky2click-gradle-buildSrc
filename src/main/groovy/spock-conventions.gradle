@@ -1,0 +1,34 @@
+plugins {
+    id 'groovy-conventions'
+}
+
+def spockBom = libs.spock.bom.map {
+    "${it.group}:${it.name}:${it.version}"
+}.get()
+
+// pluginManager.withPlugin('io.spring.dependency-management') {
+if (pluginManager.hasPlugin('io.spring.dependency-management')) {
+    logger.warn("importing ${spockBom} BOM into dependencyManagement testImplementation configuration")
+    dependencyManagement {
+        testImplementation {
+            imports {
+                mavenBom spockBom
+            }
+        }
+    }
+} else {
+    dependencies {
+        mavenBom spockBom
+    }
+}
+
+dependencies {
+    testImplementation 'org.apache.groovy:groovy'
+    testImplementation 'org.spockframework:spock-core'
+}
+
+pluginManager.withPlugin('org.springframework.boot') {
+    dependencies {
+        testImplementation 'org.spockframework:spock-spring'
+    }
+}

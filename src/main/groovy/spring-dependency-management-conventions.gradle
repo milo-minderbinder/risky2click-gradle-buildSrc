@@ -1,0 +1,168 @@
+import groovy.json.JsonOutput
+
+plugins {
+    id 'java-common-conventions'
+    id 'io.spring.dependency-management'
+}
+
+dependencyManagement {
+    //overriddenByDependencies = false
+    imports {
+        mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
+    }
+}
+
+tasks.register('checkDependencyManagement') {
+    doLast {
+        def resolvableConfigs = configurations.findAll {Configuration c ->
+            boolean canBeResolved = c.metaClass.respondsTo(c, 'isCanBeResolved') ? c.isCanBeResolved() : true
+            canBeResolved && !(c.name.endsWith('Metadata'))
+        }
+
+        Map<String, Map> jsonData = new LinkedHashMap<>();
+
+        Map<String, String> globalProperties = dependencyManagement.getImportedProperties().sort()
+        jsonData.put('globalProperties', globalProperties)
+
+        Map<String, String> globalPropertiesWithOverride = project.properties.findAll {k, v ->
+            globalProperties.containsKey(k) && v != globalProperties.get(k)
+        }.collectEntries {e ->
+            e.value = "${globalProperties.get(e.key)} -> ${e.value}"
+            return e
+        }.sort()
+        if (globalPropertiesWithOverride.size() > 0) {
+            jsonData.put('globalPropertiesWithOverride', globalPropertiesWithOverride)
+        }
+
+        Map<String, String> globalVersions = dependencyManagement.getManagedVersions().sort()
+        if (globalVersions.size()) {
+            jsonData.put('globalVersions', globalVersions)
+        }
+
+        Map<String, Map> configsData = new LinkedHashMap<>()
+        resolvableConfigs.each {Configuration c ->
+            Map<String, Map> configJsonData = new LinkedHashMap<>()
+
+            Map<String, String> directDependencies = new LinkedHashMap<>()
+            Map<String, String> transitiveDependencies = new LinkedHashMap<>()
+            c.resolvedConfiguration.lenientConfiguration.firstLevelModuleDependencies.each {ResolvedDependency d ->
+                directDependencies.put("${d.moduleGroup}:${d.moduleName}".toString(), d.getModuleVersion())
+            }
+
+            c.resolvedConfiguration.lenientConfiguration.allModuleDependencies.each {d ->
+                final String k = "${d.moduleGroup}:${d.moduleName}".toString()
+                if (!directDependencies.containsKey(k)) {
+                    transitiveDependencies.put(k, d.getModuleVersion())
+                }
+            }
+
+            if (c.resolvedConfiguration.lenientConfiguration.unresolvedModuleDependencies) {
+                logger
+                        .warn("unresolved module dependencies for ${c}:\n\t" + c
+                                .resolvedConfiguration.lenientConfiguration.unresolvedModuleDependencies.collect {
+                            d -> "${d.selector.toString()}"
+                        }.join('\n\t'))
+            }
+            directDependencies = Collections.unmodifiableMap(directDependencies.sort())
+            transitiveDependencies = Collections.unmodifiableMap(transitiveDependencies.sort())
+            if (directDependencies.size() > 0) {
+                configJsonData.put('directDependencies', directDependencies)
+            }
+            if (transitiveDependencies.size() > 0) {
+                configJsonData.put('transitiveDependencies', transitiveDependencies)
+            }
+
+            Map<String, String> commonConfigProperties = dependencyManagement
+                    .getProperty(c.name).getImportedProperties().sort().findAll {k, v ->
+                globalProperties.containsKey(k) && globalProperties.get(k) == v
+            }
+            Map<String, String> configProperties = dependencyManagement
+                    .getProperty(c.name).getImportedProperties().sort().findAll {
+                k, v -> !globalProperties.containsKey(k) || globalProperties.get(k) != v
+            }
+            if (configProperties.size() > 0) {
+                configJsonData.put('configProperties', configProperties)
+            }
+
+            Map<String, String> configPropertiesWithOverride = project.properties.findAll {k, v ->
+                configProperties.containsKey(k) && v != configProperties.get(k)
+            }.collectEntries {e ->
+                e.value = "${configProperties.get(e.key)} -> ${e.value}"
+                return e
+            }.sort()
+            if (configPropertiesWithOverride.size() > 0) {
+                configJsonData.put('configPropertiesWithOverride', configPropertiesWithOverride)
+            }
+
+            Map<String, String> commonConfigVersions = Collections.unmodifiableMap(
+                    dependencyManagement.getManagedVersionsForConfiguration(c).sort().findAll {
+                        k, v -> globalVersions.containsKey(k) && globalVersions.get(k) == v
+                    })
+            Map<String, String> configVersions = Collections.unmodifiableMap(
+                    dependencyManagement.getManagedVersionsForConfiguration(c).sort().findAll {
+                        k, v -> !globalVersions.containsKey(k) || globalVersions.get(k) != v
+                    })
+            if (configVersions.size() > 0) {
+                configJsonData.put('configVersions', configVersions)
+            }
+
+            Map<String, String> managedDirectDependencies = new LinkedHashMap<>()
+            Map<String, String> overriddenManagedDirectDependencies = new LinkedHashMap<>()
+            directDependencies.each {e ->
+                if (configVersions.containsKey(e.getKey())) {
+                    if (configVersions.get(e.getKey()) == e.getValue()) {
+                        managedDirectDependencies.put(e.getKey(), e.getValue())
+                    } else {
+                        overriddenManagedDirectDependencies.put(e.getKey(), e.getValue())
+                    }
+                } else if (globalVersions.containsKey(e.getKey())) {
+                    if (globalVersions.get(e.getKey()) == e.getValue()) {
+                        managedDirectDependencies.put(e.getKey(), e.getValue())
+                    } else {
+                        overriddenManagedDirectDependencies.put(e.getKey(), e.getValue())
+                    }
+                }
+            }
+            if (managedDirectDependencies.size() > 0) {
+                configJsonData.put('managedDirectDependencies', managedDirectDependencies)
+            }
+            if (overriddenManagedDirectDependencies.size() > 0) {
+                configJsonData.put('overriddenManagedDirectDependencies', overriddenManagedDirectDependencies)
+            }
+
+            Map<String, String> managedTransitiveDependencies = new LinkedHashMap<>()
+            Map<String, String> overriddenManagedTransitiveDependencies = new LinkedHashMap<>()
+            transitiveDependencies.each {e ->
+                if (configVersions.containsKey(e.getKey())) {
+                    if (configVersions.get(e.getKey()) == e.getValue()) {
+                        managedTransitiveDependencies.put(e.getKey(), e.getValue())
+                    } else {
+                        overriddenManagedTransitiveDependencies.put(e.getKey(), e.getValue())
+                    }
+                } else if (globalVersions.containsKey(e.getKey())) {
+                    if (globalVersions.get(e.getKey()) == e.getValue()) {
+                        managedTransitiveDependencies.put(e.getKey(), e.getValue())
+                    } else {
+                        overriddenManagedTransitiveDependencies.put(e.getKey(), e.getValue())
+                    }
+                }
+            }
+            if (managedTransitiveDependencies.size() > 0) {
+                configJsonData.put('managedTransitiveDependencies', managedTransitiveDependencies)
+            }
+            if (overriddenManagedTransitiveDependencies.size() > 0) {
+                configJsonData.put('overriddenManagedTransitiveDependencies', overriddenManagedTransitiveDependencies)
+            }
+
+            if (configJsonData.size() > 0) {
+                configsData.put(c.getName(), configJsonData)
+            }
+        }
+        if (configsData.size() > 0) {
+            jsonData.put('configurations', configsData)
+        }
+        String output = JsonOutput.prettyPrint(JsonOutput.toJson(jsonData))
+        project.layout.buildDirectory.file('checkDependencyManagement.json').get().asFile.text = output
+        logger.lifecycle(output)
+    }
+}
