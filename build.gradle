@@ -14,7 +14,7 @@ dependencyManagement {
     }
 }
 
-def managedSpringBootVersion = dependencyManagement.managedVersions['org.springframework.boot:spring-boot']
+final String managedSpringBootVersion = dependencyManagement.managedVersions['org.springframework.boot:spring-boot']
 
 dependencies {
     implementation "org.springframework.boot:spring-boot-gradle-plugin:${managedSpringBootVersion}"
@@ -24,6 +24,6 @@ dependencies {
 
 // Helper function that transforms a Gradle Plugin alias from a
 // Version Catalog into a valid dependency notation for buildSrc
-def plugin(Provider<PluginDependency> plugin) {
+static Provider<String> plugin(Provider<PluginDependency> plugin) {
     return plugin.map { it.pluginId + ":" + it.pluginId + ".gradle.plugin:" + it.version }
 }

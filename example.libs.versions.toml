@@ -1,5 +1,6 @@
 [versions]
-spring-boot = "3.5.3"
+spring-boot = "3.5.5"
+#spring-boot = { strictly = "[3.5.5, 3.6.0[" }
 spock = "2.4-M6-groovy-4.0"
 #spock = { strictly = "[2.4-M4-groovy-4.0, 2.4-M6-groovy-4.0]" }
 
@@ -9,5 +10,5 @@ spock-bom = { module = "org.spockframework:spock-bom", version.ref = "spock" }
 [plugins]
 springBoot = { id = "org.springframework.boot", version.ref = "spring-boot" }
 springDependencyManagement = { id = "io.spring.dependency-management" }
-release = { id = "pl.allegro.tech.build.axion-release", version = "1.18.16" }
+release = { id = "pl.allegro.tech.build.axion-release", version = "1.19.0" }
 

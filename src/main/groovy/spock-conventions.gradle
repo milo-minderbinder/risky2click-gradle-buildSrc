@@ -2,23 +2,21 @@ plugins {
     id 'groovy-conventions'
 }
 
-def spockBom = libs.spock.bom.map {
-    "${it.group}:${it.name}:${it.version}"
-}.get()
 
-// pluginManager.withPlugin('io.spring.dependency-management') {
 if (pluginManager.hasPlugin('io.spring.dependency-management')) {
-    logger.warn("importing ${spockBom} BOM into dependencyManagement testImplementation configuration")
     dependencyManagement {
+        //overriddenByDependencies = false
         testImplementation {
             imports {
-                mavenBom spockBom
+                logger.warn("importing ${libs.spock.bom.get()} BOM into dependencyManagement testImplementation configuration")
+                mavenBom libs.spock.bom.map { "${it.module}:${it.version}"}.get()
             }
         }
     }
 } else {
     dependencies {
-        mavenBom spockBom
+        logger.warn("importing platform ${libs.spock.bom.get()} BOM into testImplementation configuration")
+        testImplementation platform(libs.spock.bom)
     }
 }
 

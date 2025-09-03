@@ -8,6 +8,7 @@ plugins {
 dependencyManagement {
     //overriddenByDependencies = false
     imports {
+        logger.warn("importing ${org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES} BOM into dependencyManagement")
         mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
     }
 }
