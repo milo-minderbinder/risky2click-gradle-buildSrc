@@ -10,5 +10,5 @@ spock-bom = { module = "org.spockframework:spock-bom", version.ref = "spock" }
 [plugins]
 springBoot = { id = "org.springframework.boot", version.ref = "spring-boot" }
 springDependencyManagement = { id = "io.spring.dependency-management" }
-release = { id = "pl.allegro.tech.build.axion-release", version = "1.19.0" }
+release = { id = "pl.allegro.tech.build.axion-release", version = "1.20.1" }
 

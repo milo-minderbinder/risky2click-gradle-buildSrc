@@ -27,7 +27,7 @@ scmVersion {
 version = scmVersion.version
 logger.info("${project} version: ${project.version}")
 
-// subprojects {
-//     version = scmVersion.version
-//     logger.info("${project} version: ${project.version}")
-// }
+ subprojects {
+     version = rootProject.version
+     logger.info("${project} version: ${project.version}")
+ }
